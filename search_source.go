@@ -45,6 +45,7 @@ type SearchSource struct {
 	// TODO extBuilders []SearchExtBuilder // ext
 	pointInTime     *PointInTime // pit
 	runtimeMappings RuntimeMappings
+	retriever       *Retriever
 }
 
 // NewSearchSource initializes a new SearchSource.
@@ -629,7 +630,13 @@ func (s *SearchSource) Source() (interface{}, error) {
 		}
 		source["runtime_mappings"] = src
 	}
-
+	if s.retriever != nil {
+		src, err := s.retriever.Source()
+		if err != nil {
+			return nil, err
+		}
+		source["retriever"] = src
+	}
 	return source, nil
 }
 

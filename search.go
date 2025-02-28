@@ -13,7 +13,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/olivere/elastic/v7/uritemplates"
+	"github.com/olivere/elastic/v8/uritemplates"
 )
 
 // Search for documents in Elasticsearch.
@@ -26,7 +26,7 @@ type SearchService struct {
 	filterPath []string    // list of filters used to reduce the response
 	headers    http.Header // custom request-level HTTP headers
 
-	searchSource               *SearchSource // q
+	SS                         *SearchSource // q
 	source                     interface{}
 	searchType                 string // search_type
 	index                      []string
@@ -55,8 +55,8 @@ type SearchService struct {
 // NewSearchService creates a new service for searching in Elasticsearch.
 func NewSearchService(client *Client) *SearchService {
 	builder := &SearchService{
-		client:       client,
-		searchSource: NewSearchSource(),
+		client: client,
+		SS:     NewSearchSource(),
 	}
 	return builder
 }
@@ -102,10 +102,10 @@ func (s *SearchService) Headers(headers http.Header) *SearchService {
 }
 
 // SearchSource sets the search source builder to use with this service.
-func (s *SearchService) SearchSource(searchSource *SearchSource) *SearchService {
-	s.searchSource = searchSource
-	if s.searchSource == nil {
-		s.searchSource = NewSearchSource()
+func (s *SearchService) SearchSource(SS *SearchSource) *SearchService {
+	s.SS = SS
+	if s.SS == nil {
+		s.SS = NewSearchSource()
 	}
 	return s
 }
@@ -134,7 +134,7 @@ func (s *SearchService) Type(typ ...string) *SearchService {
 
 // Timeout sets the timeout to use, e.g. "1s" or "1000ms".
 func (s *SearchService) Timeout(timeout string) *SearchService {
-	s.searchSource = s.searchSource.Timeout(timeout)
+	s.SS = s.SS.Timeout(timeout)
 	return s
 }
 
@@ -142,39 +142,39 @@ func (s *SearchService) Timeout(timeout string) *SearchService {
 // When enabled, a search executed by this service will return query
 // profiling data.
 func (s *SearchService) Profile(profile bool) *SearchService {
-	s.searchSource = s.searchSource.Profile(profile)
+	s.SS = s.SS.Profile(profile)
 	return s
 }
 
 // Collapse adds field collapsing.
 func (s *SearchService) Collapse(collapse *CollapseBuilder) *SearchService {
-	s.searchSource = s.searchSource.Collapse(collapse)
+	s.SS = s.SS.Collapse(collapse)
 	return s
 }
 
 // PointInTime specifies an optional PointInTime to be used in the context
 // of this search.
 func (s *SearchService) PointInTime(pointInTime *PointInTime) *SearchService {
-	s.searchSource = s.searchSource.PointInTime(pointInTime)
+	s.SS = s.SS.PointInTime(pointInTime)
 	return s
 }
 
 // RuntimeMappings specifies optional runtime mappings.
 func (s *SearchService) RuntimeMappings(runtimeMappings RuntimeMappings) *SearchService {
-	s.searchSource = s.searchSource.RuntimeMappings(runtimeMappings)
+	s.SS = s.SS.RuntimeMappings(runtimeMappings)
 	return s
 }
 
 // TimeoutInMillis sets the timeout in milliseconds.
 func (s *SearchService) TimeoutInMillis(timeoutInMillis int) *SearchService {
-	s.searchSource = s.searchSource.TimeoutInMillis(timeoutInMillis)
+	s.SS = s.SS.TimeoutInMillis(timeoutInMillis)
 	return s
 }
 
 // TerminateAfter specifies the maximum number of documents to collect for
 // each shard, upon reaching which the query execution will terminate early.
 func (s *SearchService) TerminateAfter(terminateAfter int) *SearchService {
-	s.searchSource = s.searchSource.TerminateAfter(terminateAfter)
+	s.SS = s.SS.TerminateAfter(terminateAfter)
 	return s
 }
 
@@ -213,7 +213,7 @@ func (s *SearchService) RequestCache(requestCache bool) *SearchService {
 
 // Query sets the query to perform, e.g. MatchAllQuery.
 func (s *SearchService) Query(query Query) *SearchService {
-	s.searchSource = s.searchSource.Query(query)
+	s.SS = s.SS.Query(query)
 	return s
 }
 
@@ -221,130 +221,130 @@ func (s *SearchService) Query(query Query) *SearchService {
 // only affects the search hits, not the aggregations.
 // This filter is always executed as the last filtering mechanism.
 func (s *SearchService) PostFilter(postFilter Query) *SearchService {
-	s.searchSource = s.searchSource.PostFilter(postFilter)
+	s.SS = s.SS.PostFilter(postFilter)
 	return s
 }
 
 // FetchSource indicates whether the response should contain the stored
 // _source for every hit.
 func (s *SearchService) FetchSource(fetchSource bool) *SearchService {
-	s.searchSource = s.searchSource.FetchSource(fetchSource)
+	s.SS = s.SS.FetchSource(fetchSource)
 	return s
 }
 
 // FetchSourceContext indicates how the _source should be fetched.
 func (s *SearchService) FetchSourceContext(fetchSourceContext *FetchSourceContext) *SearchService {
-	s.searchSource = s.searchSource.FetchSourceContext(fetchSourceContext)
+	s.SS = s.SS.FetchSourceContext(fetchSourceContext)
 	return s
 }
 
 // Highlight adds highlighting to the search.
 func (s *SearchService) Highlight(highlight *Highlight) *SearchService {
-	s.searchSource = s.searchSource.Highlight(highlight)
+	s.SS = s.SS.Highlight(highlight)
 	return s
 }
 
 // GlobalSuggestText defines the global text to use with all suggesters.
 // This avoids repetition.
 func (s *SearchService) GlobalSuggestText(globalText string) *SearchService {
-	s.searchSource = s.searchSource.GlobalSuggestText(globalText)
+	s.SS = s.SS.GlobalSuggestText(globalText)
 	return s
 }
 
 // Suggester adds a suggester to the search.
 func (s *SearchService) Suggester(suggester Suggester) *SearchService {
-	s.searchSource = s.searchSource.Suggester(suggester)
+	s.SS = s.SS.Suggester(suggester)
 	return s
 }
 
 // Aggregation adds an aggreation to perform as part of the search.
 func (s *SearchService) Aggregation(name string, aggregation Aggregation) *SearchService {
-	s.searchSource = s.searchSource.Aggregation(name, aggregation)
+	s.SS = s.SS.Aggregation(name, aggregation)
 	return s
 }
 
 // MinScore sets the minimum score below which docs will be filtered out.
 func (s *SearchService) MinScore(minScore float64) *SearchService {
-	s.searchSource = s.searchSource.MinScore(minScore)
+	s.SS = s.SS.MinScore(minScore)
 	return s
 }
 
 // From index to start the search from. Defaults to 0.
 func (s *SearchService) From(from int) *SearchService {
-	s.searchSource = s.searchSource.From(from)
+	s.SS = s.SS.From(from)
 	return s
 }
 
 // Size is the number of search hits to return. Defaults to 10.
 func (s *SearchService) Size(size int) *SearchService {
-	s.searchSource = s.searchSource.Size(size)
+	s.SS = s.SS.Size(size)
 	return s
 }
 
 // Explain indicates whether each search hit should be returned with
 // an explanation of the hit (ranking).
 func (s *SearchService) Explain(explain bool) *SearchService {
-	s.searchSource = s.searchSource.Explain(explain)
+	s.SS = s.SS.Explain(explain)
 	return s
 }
 
 // Version indicates whether each search hit should be returned with
 // a version associated to it.
 func (s *SearchService) Version(version bool) *SearchService {
-	s.searchSource = s.searchSource.Version(version)
+	s.SS = s.SS.Version(version)
 	return s
 }
 
 // Sort adds a sort order.
 func (s *SearchService) Sort(field string, ascending bool) *SearchService {
-	s.searchSource = s.searchSource.Sort(field, ascending)
+	s.SS = s.SS.Sort(field, ascending)
 	return s
 }
 
 // SortWithInfo adds a sort order.
 func (s *SearchService) SortWithInfo(info SortInfo) *SearchService {
-	s.searchSource = s.searchSource.SortWithInfo(info)
+	s.SS = s.SS.SortWithInfo(info)
 	return s
 }
 
 // SortBy adds a sort order.
 func (s *SearchService) SortBy(sorter ...Sorter) *SearchService {
-	s.searchSource = s.searchSource.SortBy(sorter...)
+	s.SS = s.SS.SortBy(sorter...)
 	return s
 }
 
 // DocvalueField adds a single field to load from the field data cache
 // and return as part of the search.
 func (s *SearchService) DocvalueField(docvalueField string) *SearchService {
-	s.searchSource = s.searchSource.DocvalueField(docvalueField)
+	s.SS = s.SS.DocvalueField(docvalueField)
 	return s
 }
 
 // DocvalueFieldWithFormat adds a single field to load from the field data cache
 // and return as part of the search.
 func (s *SearchService) DocvalueFieldWithFormat(docvalueField DocvalueField) *SearchService {
-	s.searchSource = s.searchSource.DocvalueFieldWithFormat(docvalueField)
+	s.SS = s.SS.DocvalueFieldWithFormat(docvalueField)
 	return s
 }
 
 // DocvalueFields adds one or more fields to load from the field data cache
 // and return as part of the search.
 func (s *SearchService) DocvalueFields(docvalueFields ...string) *SearchService {
-	s.searchSource = s.searchSource.DocvalueFields(docvalueFields...)
+	s.SS = s.SS.DocvalueFields(docvalueFields...)
 	return s
 }
 
 // DocvalueFieldsWithFormat adds one or more fields to load from the field data cache
 // and return as part of the search.
 func (s *SearchService) DocvalueFieldsWithFormat(docvalueFields ...DocvalueField) *SearchService {
-	s.searchSource = s.searchSource.DocvalueFieldsWithFormat(docvalueFields...)
+	s.SS = s.SS.DocvalueFieldsWithFormat(docvalueFields...)
 	return s
 }
 
 // NoStoredFields indicates that no stored fields should be loaded, resulting in only
 // id and type to be returned per field.
 func (s *SearchService) NoStoredFields() *SearchService {
-	s.searchSource = s.searchSource.NoStoredFields()
+	s.SS = s.SS.NoStoredFields()
 	return s
 }
 
@@ -352,21 +352,21 @@ func (s *SearchService) NoStoredFields() *SearchService {
 // part of the search request. If none are specified, the source of the
 // document will be returned.
 func (s *SearchService) StoredField(fieldName string) *SearchService {
-	s.searchSource = s.searchSource.StoredField(fieldName)
+	s.SS = s.SS.StoredField(fieldName)
 	return s
 }
 
 // StoredFields	sets the fields to load and return as part of the search request.
 // If none are specified, the source of the document will be returned.
 func (s *SearchService) StoredFields(fields ...string) *SearchService {
-	s.searchSource = s.searchSource.StoredFields(fields...)
+	s.SS = s.SS.StoredFields(fields...)
 	return s
 }
 
 // TrackScores is applied when sorting and controls if scores will be
 // tracked as well. Defaults to false.
 func (s *SearchService) TrackScores(trackScores bool) *SearchService {
-	s.searchSource = s.searchSource.TrackScores(trackScores)
+	s.SS = s.SS.TrackScores(trackScores)
 	return s
 }
 
@@ -375,7 +375,7 @@ func (s *SearchService) TrackScores(trackScores bool) *SearchService {
 // See https://www.elastic.co/guide/en/elasticsearch/reference/7.1/search-request-track-total-hits.html
 // for details.
 func (s *SearchService) TrackTotalHits(trackTotalHits interface{}) *SearchService {
-	s.searchSource = s.searchSource.TrackTotalHits(trackTotalHits)
+	s.SS = s.SS.TrackTotalHits(trackTotalHits)
 	return s
 }
 
@@ -384,20 +384,20 @@ func (s *SearchService) TrackTotalHits(trackTotalHits interface{}) *SearchServic
 //
 // See https://www.elastic.co/guide/en/elasticsearch/reference/7.0/search-request-search-after.html
 func (s *SearchService) SearchAfter(sortValues ...interface{}) *SearchService {
-	s.searchSource = s.searchSource.SearchAfter(sortValues...)
+	s.SS = s.SS.SearchAfter(sortValues...)
 	return s
 }
 
 // DefaultRescoreWindowSize sets the rescore window size for rescores
 // that don't specify their window.
 func (s *SearchService) DefaultRescoreWindowSize(defaultRescoreWindowSize int) *SearchService {
-	s.searchSource = s.searchSource.DefaultRescoreWindowSize(defaultRescoreWindowSize)
+	s.SS = s.SS.DefaultRescoreWindowSize(defaultRescoreWindowSize)
 	return s
 }
 
 // Rescorer adds a rescorer to the search.
 func (s *SearchService) Rescorer(rescore *Rescore) *SearchService {
-	s.searchSource = s.searchSource.Rescorer(rescore)
+	s.SS = s.SS.Rescorer(rescore)
 	return s
 }
 
@@ -631,7 +631,7 @@ func (s *SearchService) Do(ctx context.Context) (*SearchResult, error) {
 	if s.source != nil {
 		body = s.source
 	} else {
-		src, err := s.searchSource.Source()
+		src, err := s.SS.Source()
 		if err != nil {
 			return nil, err
 		}
